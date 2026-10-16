@@ -192,6 +192,10 @@ static SBN_Status_t Remap(void *msg, SBN_Filter_Ctx_t *Context)
         CFE_SB_MsgId_Equal(RemapTbl->Entries[i].FromMID, FromMID))
     {
         ToMID = RemapTbl->Entries[i].ToMID;
+#ifdef SBN_DEBUG
+        EVSSendInfo(SBN_F_REMAP_EID, "Remapping from 0x%04X to 0x%04X", CFE_SB_MsgIdToValue(FromMID),
+                    CFE_SB_MsgIdToValue(ToMID));
+#endif
     }
     else
     {
@@ -238,7 +242,14 @@ static SBN_Status_t Remap_MID(CFE_SB_MsgId_t *InOutMsgIdPtr, SBN_Filter_Ctx_t *C
         } /* end if */
     }     /* end for */
 
-    return SBN_SUCCESS;
+    if (RemapTbl->RemapDefaultFlag == SBN_REMAP_DEFAULT_SEND)
+    {
+        return SBN_SUCCESS;
+    }
+    else
+    {
+        return SBN_IF_EMPTY;
+    }
 } /* end Remap_MID() */
 
 static SBN_Status_t UnloadRemapTbl(void)

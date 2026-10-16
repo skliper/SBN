@@ -411,6 +411,7 @@ static SBN_Status_t ProcessSubFromPeer(SBN_PeerInterface_t *Peer, CFE_SB_MsgId_t
     SBN_ModuleIdx_t  FilterIdx;
     SBN_Filter_Ctx_t Filter_Context;
     SBN_Status_t     SBN_Status;
+    CFE_SB_MsgId_t   Old_MsgID = MsgID;
 
     Filter_Context.MyProcessorID   = CFE_PSP_GetProcessorId();
     Filter_Context.MySpacecraftID  = CFE_PSP_GetSpacecraftId();
@@ -426,13 +427,27 @@ static SBN_Status_t ProcessSubFromPeer(SBN_PeerInterface_t *Peer, CFE_SB_MsgId_t
 
         SBN_Status = (Peer->Filters[FilterIdx]->RemapMID)(&MsgID, &Filter_Context);
 
-        if (SBN_Status != SBN_SUCCESS)
+        if (SBN_Status == SBN_SUCCESS)
         {
-            return SBN_Status;
+            EVSSendInfo(SBN_SUB_EID, "Peer subscription MID = 0x%04X, subscribed MID = 0x%04X",
+                        CFE_SB_MsgIdToValue(Old_MsgID), CFE_SB_MsgIdToValue(MsgID));
+            SBN_Status = AddSub(Peer, MsgID, QoS);
+            break;
+        }
+        else if (SBN_Status != SBN_IF_EMPTY)
+        {
+            EVSSendErr(SBN_SUB_EID, "unable to remap Sub MID 0x%04X", CFE_SB_MsgIdToValue(MsgID));
+            break;
         } /* end if */
     }     /* end for */
 
-    return AddSub(Peer, MsgID, QoS);
+    if (SBN_Status == SBN_IF_EMPTY)
+    {
+        /* It's OK to not match */
+        SBN_Status = SBN_SUCCESS;
+    }
+
+    return SBN_Status;
 } /* ProcessSubFromPeer */
 
 /**

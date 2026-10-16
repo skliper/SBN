@@ -1655,14 +1655,33 @@ SBN_Status_t SBN_ProcessNetMsg(SBN_NetInterface_t *Net, SBN_MsgType_t MsgType, C
 
                 SBN_Status = (Peer->Filters[FilterIdx]->FilterRecv)(Msg, &Filter_Context);
 
-                /* includes SBN_IF_EMPTY, for when filter recommends removing */
-                if (SBN_Status != SBN_SUCCESS)
+                if (SBN_Status == SBN_SUCCESS)
                 {
+#ifdef SBN_DEBUG
+                    EVSSendInfo(SBN_SB_EID, "SBN_APP_MSG message match!");
+#endif
+                    break;
+                }
+                else if (SBN_Status == SBN_ERROR)
+                {
+                    EVSSendErr(SBN_SB_EID, "SBN_APP_MSG filter failure");
                     return SBN_Status;
                 } /* end if */
             }     /* end for */
 
-            CFE_Status = CFE_SB_TransmitMsg(Msg, false);
+            /* Publish if not empty */
+            if (SBN_Status == SBN_SUCCESS)
+            {
+#ifdef SBN_DEBUG
+                EVSSendInfo(SBN_SB_EID, "SBN_APP_MSG publishing msg...");
+#endif
+                CFE_Status = CFE_SB_TransmitMsg(Msg, false);
+            }
+            else if (SBN_Status == SBN_IF_EMPTY)
+            {
+                /* Empty is ok */
+                SBN_Status = SBN_SUCCESS;
+            }
 
             if (CFE_Status != CFE_SUCCESS)
             {
