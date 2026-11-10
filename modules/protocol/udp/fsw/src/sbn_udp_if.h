@@ -38,7 +38,7 @@
  * \brief Number of seconds since last I've sent the peer a message when
  * I send an empty heartbeat message.
  */
-#define SBN_UDP_PEER_HEARTBEAT 5
+#define SBN_UDP_PEER_HEARTBEAT 3
 
 /**
  * \brief Number of seconds since I've last heard from the peer when I consider
